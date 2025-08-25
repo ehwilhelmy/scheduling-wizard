@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import * as Accordion from '@radix-ui/react-accordion';
 import * as Select from '@radix-ui/react-select';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import AddTeammateDropdown from './AddTeammateDropdown';
 import { 
   ChevronDownIcon, 
   CheckIcon, 
@@ -30,6 +31,20 @@ const SchedulingWizard = () => {
     { id: 1, name: 'Dave Chen', avatar: 'http://localhost:3845/assets/55016c4ae97488578ec1ee198cd925bbc4070718.png', role: 'Host' },
     { id: 2, name: 'Oren Friedman', avatar: 'http://localhost:3845/assets/01161bc86eeaaba5b80bb5e6a60198c4bf1be970.png', role: 'Host' }
   ]);
+  const [guests, setGuests] = useState([]);
+  const [observers, setObservers] = useState([]);
+
+  const handleAddHost = (user) => {
+    setHosts([...hosts, user]);
+  };
+
+  const handleAddGuest = (user) => {
+    setGuests([...guests, user]);
+  };
+
+  const handleAddObserver = (user) => {
+    setObservers([...observers, user]);
+  };
   const [distributionOption, setDistributionOption] = useState('equal');
   const [preferencesExpanded, setPreferencesExpanded] = useState(true);
 
@@ -269,7 +284,7 @@ const SchedulingWizard = () => {
 
         {/* Accordion Sections */}
         <Accordion.Root type="single" collapsible className="space-y-4">
-          <Accordion.Item value="who" className="bg-white/80 border border-gray-100 rounded-lg overflow-hidden">
+          <Accordion.Item value="who" className="bg-white/80 border border-gray-100 rounded-lg">
             <Accordion.Header>
               <Accordion.Trigger className="w-full px-3 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors group">
                 <div className="text-left">
@@ -336,10 +351,12 @@ const SchedulingWizard = () => {
                       </div>
                     ))}
                     
-                    <button className="inline-flex items-center gap-1 text-xs text-[#b60074] hover:text-[#d6409f] transition-colors">
-                      <PlusIcon className="w-4 h-4" />
-                      Add rotating-host
-                    </button>
+                    <AddTeammateDropdown 
+                      onAddUser={handleAddHost} 
+                      existingUsers={hosts}
+                      buttonLabel="Add rotating-host"
+                      role="Host"
+                    />
 
                     {/* Preferences Section */}
                     <div className="pt-2">
@@ -390,33 +407,107 @@ const SchedulingWizard = () => {
                 </div>
 
                 {/* Guests Section */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-1">Guest(s)</h4>
                     <p className="text-xs text-gray-500">Guest will be invited to every interview</p>
                   </div>
-                  <button className="inline-flex items-center gap-1 text-xs text-[#b60074] hover:text-[#d6409f] transition-colors">
-                    <PlusIcon className="w-4 h-4" />
-                    Add guests
-                  </button>
+                  
+                  {guests.length > 0 && (
+                    <div className="space-y-3">
+                      {guests.map((guest) => (
+                        <div key={guest.id} className="flex items-center gap-3">
+                          <div className="flex-1 bg-white border border-gray-100 rounded-md p-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {guest.avatar ? (
+                                  <img 
+                                    src={guest.avatar} 
+                                    alt={guest.name}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${guest.bgColor || 'bg-[rgba(244,0,140,0.09)] text-[rgba(182,0,116,0.84)]'}`}>
+                                    {guest.initials}
+                                  </div>
+                                )}
+                                <span className="text-sm font-medium text-gray-900">{guest.name}</span>
+                              </div>
+                              <span className="text-xs text-gray-500">Guest</span>
+                            </div>
+                          </div>
+                          <button 
+                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            onClick={() => setGuests(guests.filter(g => g.id !== guest.id))}
+                          >
+                            <Cross2Icon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <AddTeammateDropdown 
+                    onAddUser={handleAddGuest} 
+                    existingUsers={[...hosts, ...guests, ...observers]}
+                    buttonLabel="Add guests"
+                    role="Guest"
+                  />
                 </div>
 
                 {/* Observers Section */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 mb-1">Observer(s)</h4>
                     <p className="text-xs text-gray-500">Observers will be sent a separate invite to watch the interview live</p>
                   </div>
-                  <button className="inline-flex items-center gap-1 text-xs text-[#b60074] hover:text-[#d6409f] transition-colors">
-                    <PlusIcon className="w-4 h-4" />
-                    Add guests
-                  </button>
+                  
+                  {observers.length > 0 && (
+                    <div className="space-y-3">
+                      {observers.map((observer) => (
+                        <div key={observer.id} className="flex items-center gap-3">
+                          <div className="flex-1 bg-white border border-gray-100 rounded-md p-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                {observer.avatar ? (
+                                  <img 
+                                    src={observer.avatar} 
+                                    alt={observer.name}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${observer.bgColor || 'bg-[rgba(244,0,140,0.09)] text-[rgba(182,0,116,0.84)]'}`}>
+                                    {observer.initials}
+                                  </div>
+                                )}
+                                <span className="text-sm font-medium text-gray-900">{observer.name}</span>
+                              </div>
+                              <span className="text-xs text-gray-500">Observer</span>
+                            </div>
+                          </div>
+                          <button 
+                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            onClick={() => setObservers(observers.filter(o => o.id !== observer.id))}
+                          >
+                            <Cross2Icon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <AddTeammateDropdown 
+                    onAddUser={handleAddObserver} 
+                    existingUsers={[...hosts, ...guests, ...observers]}
+                    buttonLabel="Add observers"
+                    role="Observer"
+                  />
                 </div>
               </div>
             </Accordion.Content>
           </Accordion.Item>
 
-          <Accordion.Item value="when" className="bg-white/80 border border-gray-100 rounded-lg overflow-hidden">
+          <Accordion.Item value="when" className="bg-white/80 border border-gray-100 rounded-lg">
             <Accordion.Header>
               <Accordion.Trigger className="w-full px-3 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors group">
                 <div className="text-left">
@@ -433,7 +524,7 @@ const SchedulingWizard = () => {
             </Accordion.Content>
           </Accordion.Item>
 
-          <Accordion.Item value="advanced" className="bg-white/80 border border-gray-100 rounded-lg overflow-hidden">
+          <Accordion.Item value="advanced" className="bg-white/80 border border-gray-100 rounded-lg">
             <Accordion.Header>
               <Accordion.Trigger className="w-full px-3 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors group">
                 <div className="text-left">
