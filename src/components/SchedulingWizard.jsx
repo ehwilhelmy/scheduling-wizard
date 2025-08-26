@@ -3,6 +3,7 @@ import * as Accordion from '@radix-ui/react-accordion';
 import * as Select from '@radix-ui/react-select';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AddTeammateDropdown from './AddTeammateDropdown';
+import CalendarView from './CalendarView';
 import { 
   ChevronDownIcon, 
   CheckIcon, 
@@ -65,6 +66,9 @@ const SchedulingWizard = () => {
   const [customInterviewLimit, setCustomInterviewLimit] = useState('');
   const [bufferTime, setBufferTime] = useState('none');
   const [customBufferTime, setCustomBufferTime] = useState('');
+  
+  // Calendar view state
+  const [showCalendarView, setShowCalendarView] = useState(false);
 
   const steps = [
     { name: 'Plan', completed: true },
@@ -793,7 +797,10 @@ const SchedulingWizard = () => {
                       </Select.Root>
                     </div>
                     
-                    <button className="px-3 py-1.5 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-[#e0008008] transition-colors">
+                    <button 
+                      onClick={() => setShowCalendarView(true)}
+                      className="px-3 py-1.5 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-[#e0008008] transition-colors"
+                    >
                       View Calendar
                     </button>
                   </div>
@@ -802,7 +809,10 @@ const SchedulingWizard = () => {
                 {/* View Calendar button for non-collective events */}
                 {eventType !== 'collective' && (
                   <div className="flex justify-end">
-                    <button className="px-3 py-1.5 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-[#e0008008] transition-colors">
+                    <button 
+                      onClick={() => setShowCalendarView(true)}
+                      className="px-3 py-1.5 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-[#e0008008] transition-colors"
+                    >
                       View Calendar
                     </button>
                   </div>
@@ -1125,6 +1135,11 @@ const SchedulingWizard = () => {
           </Accordion.Item>
         </Accordion.Root>
       </div>
+      
+      {/* Calendar View Modal */}
+      {showCalendarView && (
+        <CalendarView onClose={() => setShowCalendarView(false)} />
+      )}
     </div>
   );
 };
