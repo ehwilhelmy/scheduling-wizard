@@ -15,7 +15,10 @@ import {
   Cross2Icon,
   PlusIcon,
   StarIcon,
-  StarFilledIcon
+  StarFilledIcon,
+  ChevronRightIcon,
+  ReloadIcon,
+  CalendarIcon
 } from '@radix-ui/react-icons';
 import clsx from 'clsx';
 
@@ -31,14 +34,25 @@ const SchedulingWizard = () => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingDescription, setEditingDescription] = useState(false);
   const [hosts, setHosts] = useState([
-    { id: 1, name: 'Dave Chen', avatar: 'http://localhost:3845/assets/55016c4ae97488578ec1ee198cd925bbc4070718.png', role: 'Host', priority: 'highest' },
-    { id: 2, name: 'Oren Friedman', avatar: 'http://localhost:3845/assets/01161bc86eeaaba5b80bb5e6a60198c4bf1be970.png', role: 'Host', priority: 'high' }
+    { id: 1, name: 'Dave Chen', role: 'Host', priority: 'high' },
+    { id: 2, name: 'Oren Friedman', role: 'Host', priority: 'high' }
   ]);
   const [guests, setGuests] = useState([]);
   const [observers, setObservers] = useState([]);
+  const [expandedHosts, setExpandedHosts] = useState(new Set());
 
   const handleAddHost = (user) => {
     setHosts([...hosts, { ...user, priority: 'high' }]);
+  };
+
+  const toggleHostExpansion = (hostId) => {
+    const newExpanded = new Set(expandedHosts);
+    if (newExpanded.has(hostId)) {
+      newExpanded.delete(hostId);
+    } else {
+      newExpanded.add(hostId);
+    }
+    setExpandedHosts(newExpanded);
   };
 
   const handleAddGuest = (user) => {
@@ -54,7 +68,7 @@ const SchedulingWizard = () => {
       host.id === hostId ? { ...host, priority } : host
     ));
   };
-  const [distributionOption, setDistributionOption] = useState('equal');
+  const [distributionOption, setDistributionOption] = useState('maximize');
   const [preferencesExpanded, setPreferencesExpanded] = useState(true);
   
   // Availability section state
@@ -334,35 +348,10 @@ const SchedulingWizard = () => {
                         <div className="flex-1 bg-white border border-gray-100 rounded-md p-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <img 
-                                src={host.avatar} 
-                                alt={host.name}
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium bg-[rgba(244,0,140,0.09)] text-[rgba(182,0,116,0.84)]">
+                                {host.name.split(' ').map(n => n[0]).join('')}
+                              </div>
                               <span className="text-sm font-medium text-gray-900">{host.name}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <Select.Root value={host.role.toLowerCase()}>
-                                <Select.Trigger className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-sm transition-colors">
-                                  <Select.Value />
-                                  <ChevronDownIcon className="w-3 h-3" />
-                                </Select.Trigger>
-                                <Select.Portal>
-                                  <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden">
-                                    <Select.Viewport className="p-1">
-                                      <Select.Item value="host" className="px-2 py-1 text-xs rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                        <Select.ItemText>Host</Select.ItemText>
-                                      </Select.Item>
-                                      <Select.Item value="guest" className="px-2 py-1 text-xs rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                        <Select.ItemText>Guest</Select.ItemText>
-                                      </Select.Item>
-                                      <Select.Item value="observer" className="px-2 py-1 text-xs rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                        <Select.ItemText>Observer</Select.ItemText>
-                                      </Select.Item>
-                                    </Select.Viewport>
-                                  </Select.Content>
-                                </Select.Portal>
-                              </Select.Root>
                             </div>
                           </div>
                         </div>
@@ -382,51 +371,6 @@ const SchedulingWizard = () => {
                       role="Host"
                     />
 
-                    {/* Preferences Section */}
-                    <div className="pt-2">
-                      <button 
-                        onClick={() => setPreferencesExpanded(!preferencesExpanded)}
-                        className="flex items-center gap-1 text-sm font-medium text-gray-900 hover:text-gray-700 transition-colors"
-                      >
-                        Preferences
-                        <ChevronUpIcon className={`w-4 h-4 transition-transform ${preferencesExpanded ? '' : 'rotate-180'}`} />
-                      </button>
-                      
-                      {preferencesExpanded && (
-                        <div className="mt-3 space-y-2">
-                          <div className="max-w-xs">
-                            <label className="block text-sm font-medium text-gray-900 mb-2">Distribution options:</label>
-                            <Select.Root value={distributionOption} onValueChange={setDistributionOption}>
-                              <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                                <Select.Value>
-                                  {distributionOption === 'equal' ? 'Optimize for equal distribution' : 
-                                   distributionOption === 'random' ? 'Random distribution' : 
-                                   'Based on preferences'}
-                                </Select.Value>
-                                <Select.Icon asChild>
-                                  <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                                </Select.Icon>
-                              </Select.Trigger>
-                              <Select.Portal>
-                                <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden">
-                                  <Select.Viewport className="p-1">
-                                    <Select.Item value="equal" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                      <Select.ItemText>Optimize for equal distribution</Select.ItemText>
-                                    </Select.Item>
-                                    <Select.Item value="random" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                      <Select.ItemText>Random distribution</Select.ItemText>
-                                    </Select.Item>
-                                    <Select.Item value="preference" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                      <Select.ItemText>Based on preferences</Select.ItemText>
-                                    </Select.Item>
-                                  </Select.Viewport>
-                                </Select.Content>
-                              </Select.Portal>
-                            </Select.Root>
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
 
@@ -542,577 +486,281 @@ const SchedulingWizard = () => {
               </Accordion.Trigger>
             </Accordion.Header>
             <Accordion.Content className="px-4 pb-4">
-              <div className="space-y-4">
-                {/* Current availability summary */}
-                <div className="text-sm text-gray-500">
-                  Weekdays, 9am - 5 pm EST
-                </div>
-
-                {/* Scheduling Settings */}
-                <div className="space-y-4">
-                  {/* Date range and scheduling window */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-900">Date range</label>
-                      <Select.Root value={dateRange} onValueChange={setDateRange}>
-                        <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                          <Select.Value>
-                            {dateRange === 'rolling-dates' ? 'Rolling-dates' :
-                             dateRange === 'fixed-dates' ? 'Fixed dates' : 
-                             'Custom range'}
-                          </Select.Value>
-                          <Select.Icon asChild>
-                            <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                          </Select.Icon>
-                        </Select.Trigger>
-                        <Select.Portal>
-                          <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
-                            <Select.Viewport className="p-1">
-                              <Select.Item value="rolling-dates" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <Select.ItemText>Rolling-dates</Select.ItemText>
-                              </Select.Item>
-                              <Select.Item value="fixed-dates" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <Select.ItemText>Fixed dates</Select.ItemText>
-                              </Select.Item>
-                              <Select.Item value="custom" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <Select.ItemText>Custom range</Select.ItemText>
-                              </Select.Item>
-                            </Select.Viewport>
-                          </Select.Content>
-                        </Select.Portal>
-                      </Select.Root>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-900">Invitees can schedule for</label>
-                      <Select.Root value={scheduleWindow} onValueChange={setScheduleWindow}>
-                        <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                          <Select.Value>
-                            {scheduleWindow === '60-days' ? '60 days' :
-                             scheduleWindow === '30-days' ? '30 days' :
-                             scheduleWindow === '90-days' ? '90 days' : '2 weeks'}
-                          </Select.Value>
-                          <Select.Icon asChild>
-                            <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                          </Select.Icon>
-                        </Select.Trigger>
-                        <Select.Portal>
-                          <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
-                            <Select.Viewport className="p-1">
-                              <Select.Item value="2-weeks" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <Select.ItemText>2 weeks</Select.ItemText>
-                              </Select.Item>
-                              <Select.Item value="30-days" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <Select.ItemText>30 days</Select.ItemText>
-                              </Select.Item>
-                              <Select.Item value="60-days" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <Select.ItemText>60 days</Select.ItemText>
-                              </Select.Item>
-                              <Select.Item value="90-days" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <Select.ItemText>90 days</Select.ItemText>
-                              </Select.Item>
-                            </Select.Viewport>
-                          </Select.Content>
-                        </Select.Portal>
-                      </Select.Root>
-                    </div>
-                  </div>
-
-                  {/* Capacity modifiers */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-900">Interview limit</label>
-                      <Select.Root value={interviewLimit} onValueChange={setInterviewLimit}>
-                        <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                          <Select.Value>
-                            {interviewLimit === 'none' ? 'No limit' :
-                             interviewLimit === '1-per-day' ? '1 per day (-20% capacity)' :
-                             interviewLimit === '2-per-day' ? '2 per day (-10% capacity)' :
-                             interviewLimit === '3-per-day' ? '3 per day (-5% capacity)' :
-                             interviewLimit === 'custom' ? `${customInterviewLimit} per day (custom)` : 'No limit'}
-                          </Select.Value>
-                          <Select.Icon asChild>
-                            <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                          </Select.Icon>
-                        </Select.Trigger>
-                        <Select.Portal>
-                          <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
-                            <Select.Viewport className="p-1">
-                              <Select.Item value="none" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>No limit</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Full capacity available</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="1-per-day" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>1 per day</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Reduces capacity by ~20%</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="2-per-day" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>2 per day</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Reduces capacity by ~10%</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="3-per-day" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>3 per day</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Reduces capacity by ~5%</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="custom" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>Custom limit</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Set your own daily interview limit</span>
-                                </div>
-                              </Select.Item>
-                            </Select.Viewport>
-                          </Select.Content>
-                        </Select.Portal>
-                      </Select.Root>
-                      
-                      {/* Custom interview limit input */}
-                      {interviewLimit === 'custom' && (
-                        <div className="mt-2">
-                          <input
-                            type="number"
-                            min="1"
-                            max="10"
-                            value={customInterviewLimit}
-                            onChange={(e) => setCustomInterviewLimit(e.target.value)}
-                            placeholder="Enter number"
-                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <div className="text-xs text-gray-500 mt-1">Maximum interviews per day</div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-900">Buffer time</label>
-                      <Select.Root value={bufferTime} onValueChange={setBufferTime}>
-                        <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                          <Select.Value>
-                            {bufferTime === 'none' ? 'No buffer' :
-                             bufferTime === '5-mins' ? '5 mins (-10% capacity)' :
-                             bufferTime === '10-mins' ? '10 mins (-15% capacity)' :
-                             bufferTime === '15-mins' ? '15 mins (-20% capacity)' :
-                             bufferTime === 'custom' ? `${customBufferTime} mins (custom)` : 'No buffer'}
-                          </Select.Value>
-                          <Select.Icon asChild>
-                            <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                          </Select.Icon>
-                        </Select.Trigger>
-                        <Select.Portal>
-                          <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
-                            <Select.Viewport className="p-1">
-                              <Select.Item value="none" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>No buffer</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Back-to-back interviews</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="5-mins" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>5 mins</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Short break, ~10% capacity reduction</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="10-mins" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>10 mins</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Standard buffer, ~15% capacity reduction</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="15-mins" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>15 mins</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Long break, ~20% capacity reduction</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="custom" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>Custom buffer</Select.ItemText>
-                                  <span className="text-xs text-gray-500">Set your own buffer time</span>
-                                </div>
-                              </Select.Item>
-                            </Select.Viewport>
-                          </Select.Content>
-                        </Select.Portal>
-                      </Select.Root>
-                      
-                      {/* Custom buffer time input */}
-                      {bufferTime === 'custom' && (
-                        <div className="mt-2">
-                          <input
-                            type="number"
-                            min="1"
-                            max="30"
-                            value={customBufferTime}
-                            onChange={(e) => setCustomBufferTime(e.target.value)}
-                            placeholder="Enter minutes"
-                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <div className="text-xs text-gray-500 mt-1">Buffer time between interviews (minutes)</div>
-                        </div>
-                      )}
-                    </div>
+              <div className="space-y-6">
+                {/* Date-range - Calendly style simple */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-3">Date-range</h4>
+                  <div className="text-gray-700 mb-4">
+                    Invitees can schedule 
+                    <Select.Root value={scheduleWindow} onValueChange={setScheduleWindow}>
+                      <Select.Trigger className="inline-flex items-center gap-1 mx-1 text-blue-600 hover:text-blue-700 font-medium">
+                        <Select.Value>
+                          {scheduleWindow === '60-days' ? '60 days' :
+                           scheduleWindow === '30-days' ? '30 days' :
+                           scheduleWindow === '90-days' ? '90 days' : '60 days'}
+                        </Select.Value>
+                        <ChevronDownIcon className="w-4 h-4" />
+                      </Select.Trigger>
+                      <Select.Portal>
+                        <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
+                          <Select.Viewport className="p-1">
+                            <Select.Item value="30-days" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <Select.ItemText>30 days</Select.ItemText>
+                            </Select.Item>
+                            <Select.Item value="60-days" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <Select.ItemText>60 days</Select.ItemText>
+                            </Select.Item>
+                            <Select.Item value="90-days" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <Select.ItemText>90 days</Select.ItemText>
+                            </Select.Item>
+                          </Select.Viewport>
+                        </Select.Content>
+                      </Select.Portal>
+                    </Select.Root>
+                    into the future with at least 
+                    <Select.Root value="4-hours">
+                      <Select.Trigger className="inline-flex items-center gap-1 mx-1 text-blue-600 hover:text-blue-700 font-medium">
+                        <Select.Value>4 hours</Select.Value>
+                        <ChevronDownIcon className="w-4 h-4" />
+                      </Select.Trigger>
+                      <Select.Portal>
+                        <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
+                          <Select.Viewport className="p-1">
+                            <Select.Item value="1-hour" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <Select.ItemText>1 hour</Select.ItemText>
+                            </Select.Item>
+                            <Select.Item value="4-hours" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <Select.ItemText>4 hours</Select.ItemText>
+                            </Select.Item>
+                            <Select.Item value="24-hours" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <Select.ItemText>24 hours</Select.ItemText>
+                            </Select.Item>
+                          </Select.Viewport>
+                        </Select.Content>
+                      </Select.Portal>
+                    </Select.Root>
+                    notice
                   </div>
                 </div>
 
-                {/* Schedule Mode Selection - Only for Collective events */}
-                {eventType === 'collective' && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">Schedule</span>
-                      <Select.Root value={scheduleMode} onValueChange={setScheduleMode}>
-                        <Select.Trigger className="inline-flex items-center gap-2 px-0 py-1 text-sm text-[#b60074] hover:bg-gray-50 rounded transition-colors">
-                          <Select.Value>
-                            {scheduleMode === 'by-host' ? 'Set by host (default)' : 'Same for all hosts'}
-                          </Select.Value>
-                          <Select.Icon>
-                            <ChevronDownIcon className="w-4 h-4" />
-                          </Select.Icon>
-                        </Select.Trigger>
-                        <Select.Portal>
-                          <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
-                            <Select.Viewport className="p-1">
-                              <Select.Item value="by-host" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>Set by host (default)</Select.ItemText>
-                                  <span className="text-xs text-gray-500 mt-1">Each host sets their own availability. Interviews scheduled when ANY host is available.</span>
-                                </div>
-                              </Select.Item>
-                              <Select.Item value="collective" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
-                                <div className="flex flex-col items-start">
-                                  <Select.ItemText>Same for all hosts</Select.ItemText>
-                                  <span className="text-xs text-gray-500 mt-1">All hosts share the same schedule. Interviews scheduled when ALL hosts are available.</span>
-                                </div>
-                              </Select.Item>
-                            </Select.Viewport>
-                          </Select.Content>
-                        </Select.Portal>
-                      </Select.Root>
-                    </div>
-                    
-                    <button 
-                      onClick={() => setShowCalendarView(true)}
-                      className="px-3 py-1.5 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-[#e0008008] transition-colors"
-                    >
-                      View Calendar
-                    </button>
+                {/* Schedule */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900 mb-3">Schedule</h4>
+                  <div className="mb-4">
+                    <Select.Root value="set-by-host">
+                      <Select.Trigger className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium">
+                        <Select.Value>Set by host</Select.Value>
+                        <ChevronUpIcon className="w-4 h-4" />
+                      </Select.Trigger>
+                      <Select.Portal>
+                        <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50 w-64">
+                          <Select.Viewport className="p-1">
+                            <Select.Item value="set-by-host" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <div className="flex items-center gap-2">
+                                <Select.ItemText>Set by host</Select.ItemText>
+                                <CheckIcon className="w-4 h-4 text-blue-600" />
+                              </div>
+                            </Select.Item>
+                            <Select.Item value="same-for-all" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                              <Select.ItemText>Same for all hosts</Select.ItemText>
+                            </Select.Item>
+                          </Select.Viewport>
+                        </Select.Content>
+                      </Select.Portal>
+                    </Select.Root>
                   </div>
-                )}
 
-                {/* View Calendar button for non-collective events */}
-                {eventType !== 'collective' && (
-                  <div className="flex justify-end">
-                    <button 
-                      onClick={() => setShowCalendarView(true)}
-                      className="px-3 py-1.5 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-[#e0008008] transition-colors"
-                    >
-                      View Calendar
-                    </button>
-                  </div>
-                )}
-
-                {/* Host-specific availability cards - for non-collective or collective with by-host mode */}
-                {(eventType !== 'collective' || scheduleMode === 'by-host') && (
-                  <div className="space-y-3">
-                    <div className="text-sm font-medium text-gray-700 mb-2">
-                      {eventType === 'round-robin' 
-                        ? 'Individual host availability (one host per interview):' 
-                        : eventType === 'one-on-one'
-                        ? 'Host availability:'
-                        : 'Combined availability from all hosts:'
-                      }
-                    </div>
-                    
-                    {/* Dynamic capacity calculation */}
-                    {eventType === 'round-robin' && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3">
-                        <div className="text-xs text-blue-800">
-                          <div className="font-medium mb-2">📊 Calculated Interview Capacity</div>
-                          
-                          {/* Base capacity by host priority */}
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-                            {hosts.filter(h => h.priority === 'highest').length > 0 && (
-                              <div className="flex items-center gap-1">
-                                <StarFilledIcon className="w-3 h-3 text-yellow-500" />
-                                <span>Highest: ~{hosts.filter(h => h.priority === 'highest').length * (() => {
-                                  const base = timeSlots === '15-mins' ? 14 : timeSlots === '30-mins' ? 10 : timeSlots === '45-mins' ? 8 : 6;
-                                  const limitMultiplier = interviewLimit === '1-per-day' ? 0.8 : 
-                                                      interviewLimit === '2-per-day' ? 0.9 : 
-                                                      interviewLimit === '3-per-day' ? 0.95 :
-                                                      interviewLimit === 'custom' && customInterviewLimit ? Math.max(0.5, 1 - (parseInt(customInterviewLimit) - 1) * 0.1) : 1;
-                                  const bufferMultiplier = bufferTime === '5-mins' ? 0.9 : 
-                                                          bufferTime === '10-mins' ? 0.85 : 
-                                                          bufferTime === '15-mins' ? 0.8 :
-                                                          bufferTime === 'custom' && customBufferTime ? Math.max(0.7, 1 - parseInt(customBufferTime) * 0.01) : 1;
-                                  const withLimits = base * limitMultiplier;
-                                  const withBuffer = withLimits * bufferMultiplier;
-                                  return Math.round(withBuffer);
-                                })()} slots/week</span>
-                              </div>
-                            )}
-                            {hosts.filter(h => h.priority === 'high').length > 0 && (
-                              <div className="flex items-center gap-1">
-                                <StarFilledIcon className="w-3 h-3 text-blue-500" />
-                                <span>High: ~{hosts.filter(h => h.priority === 'high').length * (() => {
-                                  const base = timeSlots === '15-mins' ? 10 : timeSlots === '30-mins' ? 6 : timeSlots === '45-mins' ? 5 : 3;
-                                  const limitMultiplier = interviewLimit === '1-per-day' ? 0.8 : 
-                                                      interviewLimit === '2-per-day' ? 0.9 : 
-                                                      interviewLimit === '3-per-day' ? 0.95 :
-                                                      interviewLimit === 'custom' && customInterviewLimit ? Math.max(0.5, 1 - (parseInt(customInterviewLimit) - 1) * 0.1) : 1;
-                                  const bufferMultiplier = bufferTime === '5-mins' ? 0.9 : 
-                                                          bufferTime === '10-mins' ? 0.85 : 
-                                                          bufferTime === '15-mins' ? 0.8 :
-                                                          bufferTime === 'custom' && customBufferTime ? Math.max(0.7, 1 - parseInt(customBufferTime) * 0.01) : 1;
-                                  const withLimits = base * limitMultiplier;
-                                  const withBuffer = withLimits * bufferMultiplier;
-                                  return Math.round(withBuffer);
-                                })()} slots/week</span>
-                              </div>
-                            )}
-                            {hosts.filter(h => h.priority === 'low').length > 0 && (
-                              <div className="flex items-center gap-1">
-                                <StarIcon className="w-3 h-3 text-gray-500" />
-                                <span>Low: ~{hosts.filter(h => h.priority === 'low').length * (() => {
-                                  const base = timeSlots === '15-mins' ? 6 : timeSlots === '30-mins' ? 3 : timeSlots === '45-mins' ? 2 : 2;
-                                  const limitMultiplier = interviewLimit === '1-per-day' ? 0.8 : 
-                                                      interviewLimit === '2-per-day' ? 0.9 : 
-                                                      interviewLimit === '3-per-day' ? 0.95 :
-                                                      interviewLimit === 'custom' && customInterviewLimit ? Math.max(0.5, 1 - (parseInt(customInterviewLimit) - 1) * 0.1) : 1;
-                                  const bufferMultiplier = bufferTime === '5-mins' ? 0.9 : 
-                                                          bufferTime === '10-mins' ? 0.85 : 
-                                                          bufferTime === '15-mins' ? 0.8 :
-                                                          bufferTime === 'custom' && customBufferTime ? Math.max(0.7, 1 - parseInt(customBufferTime) * 0.01) : 1;
-                                  const withLimits = base * limitMultiplier;
-                                  const withBuffer = withLimits * bufferMultiplier;
-                                  return Math.round(withBuffer);
-                                })()} slots/week</span>
-                              </div>
-                            )}
-                            {hosts.filter(h => h.priority === 'lowest').length > 0 && (
-                              <div className="flex items-center gap-1">
-                                <StarIcon className="w-3 h-3 text-gray-400" />
-                                <span>Lowest: ~{hosts.filter(h => h.priority === 'lowest').length * (() => {
-                                  const base = timeSlots === '15-mins' ? 4 : timeSlots === '30-mins' ? 2 : timeSlots === '45-mins' ? 1 : 1;
-                                  const limitMultiplier = interviewLimit === '1-per-day' ? 0.8 : 
-                                                      interviewLimit === '2-per-day' ? 0.9 : 
-                                                      interviewLimit === '3-per-day' ? 0.95 :
-                                                      interviewLimit === 'custom' && customInterviewLimit ? Math.max(0.5, 1 - (parseInt(customInterviewLimit) - 1) * 0.1) : 1;
-                                  const bufferMultiplier = bufferTime === '5-mins' ? 0.9 : 
-                                                          bufferTime === '10-mins' ? 0.85 : 
-                                                          bufferTime === '15-mins' ? 0.8 :
-                                                          bufferTime === 'custom' && customBufferTime ? Math.max(0.7, 1 - parseInt(customBufferTime) * 0.01) : 1;
-                                  const withLimits = base * limitMultiplier;
-                                  const withBuffer = withLimits * bufferMultiplier;
-                                  return Math.round(withBuffer);
-                                })()} slots/week</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Settings impact */}
-                          <div className="mb-2 space-y-1">
-                            <div className="flex items-center gap-1 text-xs">
-                              <span className="font-medium">Duration impact:</span>
-                              <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                                timeSlots === '15-mins' ? 'bg-green-100 text-green-700' :
-                                timeSlots === '30-mins' ? 'bg-blue-100 text-blue-700' :
-                                timeSlots === '45-mins' ? 'bg-orange-100 text-orange-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                {timeSlots === '15-mins' ? '+50% more slots' :
-                                 timeSlots === '30-mins' ? 'Standard capacity' :
-                                 timeSlots === '45-mins' ? '-25% slots' : '-50% slots'}
-                              </span>
-                            </div>
-                            {(interviewLimit !== 'none' || bufferTime !== 'none') && (
-                              <div className="flex items-center gap-2 text-xs">
-                                <span className="font-medium">Active modifiers:</span>
-                                {interviewLimit !== 'none' && (
-                                  <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">
-                                    {interviewLimit === '1-per-day' ? '-20% limit' : 
-                                     interviewLimit === '2-per-day' ? '-10% limit' :
-                                     interviewLimit === '3-per-day' ? '-5% limit' :
-                                     interviewLimit === 'custom' && customInterviewLimit ? `${customInterviewLimit}/day limit` : 'limit'}
-                                  </span>
-                                )}
-                                {bufferTime !== 'none' && (
-                                  <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">
-                                    {bufferTime === '5-mins' ? '-10% buffer' :
-                                     bufferTime === '10-mins' ? '-15% buffer' :
-                                     bufferTime === '15-mins' ? '-20% buffer' :
-                                     bufferTime === 'custom' && customBufferTime ? `${customBufferTime}min buffer` : 'buffer'}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="mt-2 pt-2 border-t border-blue-200 text-sm font-medium text-blue-700">
-                            🎯 Total weekly capacity: ~{hosts.reduce((total, host) => {
-                              const base = host.priority === 'high' ? (timeSlots === '15-mins' ? 12 : timeSlots === '30-mins' ? 8 : timeSlots === '45-mins' ? 6 : 4) :
-                                          host.priority === 'medium' ? (timeSlots === '15-mins' ? 10 : timeSlots === '30-mins' ? 6 : timeSlots === '45-mins' ? 5 : 3) :
-                                          (timeSlots === '15-mins' ? 6 : timeSlots === '30-mins' ? 3 : timeSlots === '45-mins' ? 2 : 2);
-                              const limitMultiplier = interviewLimit === '1-per-day' ? 0.8 : interviewLimit === '2-per-day' ? 0.9 : interviewLimit === '3-per-day' ? 0.95 : 1;
-                              const bufferMultiplier = bufferTime === '5-mins' ? 0.9 : bufferTime === '10-mins' ? 0.85 : bufferTime === '15-mins' ? 0.8 : 1;
-                              const withLimits = base * limitMultiplier;
-                              const withBuffer = withLimits * bufferMultiplier;
-                              return total + Math.round(withBuffer);
-                            }, 0)} interview slots
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {hosts.map((host) => (
-                      <div key={host.id} className={`border-2 rounded-md p-3 ${host.id === 1 ? 'border-[#d6409f]' : 'border-gray-200'}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {host.avatar ? (
-                              <img 
-                                src={host.avatar} 
-                                alt={host.name}
-                                className="w-8 h-8 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium bg-[rgba(244,0,140,0.09)] text-[rgba(182,0,116,0.84)]">
+                  {/* Host Schedules - Calendly style simple */}
+                  <div className="space-y-4">
+                    {hosts.map((host) => {
+                      const isExpanded = expandedHosts.has(host.id);
+                      return (
+                        <div key={host.id} className="border border-gray-200 rounded-lg">
+                          <button 
+                            onClick={() => toggleHostExpansion(host.id)}
+                            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium bg-[rgba(244,0,140,0.09)] text-[rgba(182,0,116,0.84)]">
                                 {host.name.split(' ').map(n => n[0]).join('')}
                               </div>
-                            )}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <div className="text-sm font-medium text-gray-900">{host.name}</div>
-                                {eventType === 'round-robin' && (
-                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded-full ${
-                                    host.priority === 'highest' ? 'bg-yellow-100 text-yellow-700' :
-                                    host.priority === 'high' ? 'bg-blue-100 text-blue-700' :
-                                    host.priority === 'low' ? 'bg-gray-100 text-gray-600' :
-                                    'bg-gray-50 text-gray-500'
-                                  }`}>
-                                    {host.priority === 'highest' ? <StarFilledIcon className="w-3 h-3" /> :
-                                     host.priority === 'high' ? <StarFilledIcon className="w-3 h-3" /> :
-                                     host.priority === 'low' ? <StarIcon className="w-3 h-3" /> :
-                                     <StarIcon className="w-3 h-3" />}
-                                    {host.priority === 'highest' ? 'Highest' : host.priority === 'high' ? 'High' : host.priority === 'low' ? 'Low' : 'Lowest'}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {host.id === 1 ? 'Weekdays, 9am - 5 pm EST' : 'Weekdays, 9am - 5 pm, hours vary'}
-                                {eventType === 'round-robin' && (
-                                  <span className="ml-2">
-                                    (~{host.priority === 'highest' ? '10' : host.priority === 'high' ? '6' : host.priority === 'low' ? '3' : '2'} slots/week)
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {/* Primary role selector for round robin */}
-                              {eventType === 'round-robin' && (
-                                <div className="mt-2">
-                                  <Select.Root value={host.priority} onValueChange={(value) => updateHostPriority(host.id, value)}>
-                                    <Select.Trigger className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded-sm transition-colors">
-                                      <span>Preferences:</span>
-                                      <Select.Value />
-                                      <ChevronDownIcon className="w-3 h-3" />
-                                    </Select.Trigger>
-                                    <Select.Portal>
-                                      <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
-                                        <Select.Viewport className="p-1">
-                                          <Select.Item value="highest" className="px-3 py-2 text-xs rounded cursor-pointer hover:bg-gray-100 outline-none relative">
-                                            <div className="flex items-center gap-2">
-                                              <StarFilledIcon className="w-3 h-3 text-yellow-500" />
-                                              <div className="flex flex-col items-start">
-                                                <Select.ItemText>Highest</Select.ItemText>
-                                                <span className="text-xs text-gray-500">Priority interviewer (~10 slots/week)</span>
-                                              </div>
-                                              <Select.ItemIndicator className="absolute right-2">
-                                                <CheckIcon className="w-3 h-3" />
-                                              </Select.ItemIndicator>
-                                            </div>
-                                          </Select.Item>
-                                          <Select.Item value="high" className="px-3 py-2 text-xs rounded cursor-pointer hover:bg-gray-100 outline-none relative">
-                                            <div className="flex items-center gap-2">
-                                              <StarFilledIcon className="w-3 h-3 text-blue-500" />
-                                              <div className="flex flex-col items-start">
-                                                <Select.ItemText>High</Select.ItemText>
-                                                <span className="text-xs text-gray-500">Regular rotation (~6 slots/week)</span>
-                                              </div>
-                                              <Select.ItemIndicator className="absolute right-2">
-                                                <CheckIcon className="w-3 h-3" />
-                                              </Select.ItemIndicator>
-                                            </div>
-                                          </Select.Item>
-                                          <Select.Item value="low" className="px-3 py-2 text-xs rounded cursor-pointer hover:bg-gray-100 outline-none relative">
-                                            <div className="flex items-center gap-2">
-                                              <StarIcon className="w-3 h-3 text-gray-500" />
-                                              <div className="flex flex-col items-start">
-                                                <Select.ItemText>Low</Select.ItemText>
-                                                <span className="text-xs text-gray-500">Limited availability (~3 slots/week)</span>
-                                              </div>
-                                              <Select.ItemIndicator className="absolute right-2">
-                                                <CheckIcon className="w-3 h-3" />
-                                              </Select.ItemIndicator>
-                                            </div>
-                                          </Select.Item>
-                                          <Select.Item value="lowest" className="px-3 py-2 text-xs rounded cursor-pointer hover:bg-gray-100 outline-none relative">
-                                            <div className="flex items-center gap-2">
-                                              <StarIcon className="w-3 h-3 text-gray-400" />
-                                              <div className="flex flex-col items-start">
-                                                <Select.ItemText>Lowest</Select.ItemText>
-                                                <span className="text-xs text-gray-500">Backup only (~2 slots/week)</span>
-                                              </div>
-                                              <Select.ItemIndicator className="absolute right-2">
-                                                <CheckIcon className="w-3 h-3" />
-                                              </Select.ItemIndicator>
-                                            </div>
-                                          </Select.Item>
-                                        </Select.Viewport>
-                                      </Select.Content>
-                                    </Select.Portal>
-                                  </Select.Root>
-                                </div>
-                              )}
+                              <div className="font-medium text-gray-900">{host.name}</div>
                             </div>
-                          </div>
-                          <button className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-[#b60074] hover:bg-gray-50 rounded transition-colors">
-                            <Pencil1Icon className="w-4 h-4" />
-                            Availability
+                            <ChevronDownIcon className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                           </button>
+                        
+                        {/* Schedule details - collapsed by default like Calendly */}
+                        {isExpanded && (
+                          <div className="p-4 bg-gray-50 border-t border-gray-200">
+                          <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                            <span>Schedule:</span>
+                            <Select.Root value="working-hours">
+                              <Select.Trigger className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium">
+                                <Select.Value>Working hours (default)</Select.Value>
+                                <ChevronDownIcon className="w-4 h-4" />
+                              </Select.Trigger>
+                              <Select.Portal>
+                                <Select.Content className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-50">
+                                  <Select.Viewport className="p-1">
+                                    <Select.Item value="working-hours" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                                      <Select.ItemText>Working hours (default)</Select.ItemText>
+                                    </Select.Item>
+                                    <Select.Item value="custom-hours" className="px-3 py-2 text-sm rounded cursor-pointer hover:bg-gray-100 outline-none">
+                                      <Select.ItemText>Custom hours</Select.ItemText>
+                                    </Select.Item>
+                                  </Select.Viewport>
+                                </Select.Content>
+                              </Select.Portal>
+                            </Select.Root>
+                          </div>
+                          
+                          {/* Mini calendar preview like Calendly */}
+                          <div className="bg-white rounded-lg p-4 border">
+                            <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
+                              <ClockIcon className="w-4 h-4" />
+                              This event type uses the weekly and custom hours saved on the schedule
+                            </div>
+                            
+                            <div className="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">
+                              <ReloadIcon className="w-4 h-4" />
+                              Weekly hours
+                            </div>
+                            
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-xs text-white">S</div>
+                                  <span className="text-gray-500">Unavailable</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white">M</div>
+                                  <span>9:00am - 5:00pm</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white">T</div>
+                                  <span>9:00am - 5:00pm</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white">W</div>
+                                  <span>9:00am - 5:00pm</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white">T</div>
+                                  <span>9:00am - 5:00pm</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white">F</div>
+                                  <span>9:00am - 5:00pm</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-xs text-white">S</div>
+                                  <span className="text-gray-500">Unavailable</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="text-xs text-gray-500 mt-3">Eastern Time - US & Canada</div>
+                            
+                            <button className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                              <CalendarIcon className="w-4 h-4" />
+                              Date-specific hours
+                            </button>
+                          </div>
+                          
+                            <button className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-gray-50 transition-colors">
+                              Edit availability
+                            </button>
+                          </div>
+                        )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                )}
 
-                {/* Collective schedule - only for collective events in collective mode */}
-                {eventType === 'collective' && scheduleMode === 'collective' && (
-                  <div className="space-y-3">
-                    <div className="text-sm font-medium text-gray-700 mb-2">
-                      Common schedule for all hosts:
-                    </div>
-                    <div className="border-2 border-[#d6409f] rounded-md p-3">
-                      <div className="flex items-center justify-between">
+                  {/* Advanced Options - collapsed by default */}
+                  <details className="group">
+                    <summary className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900">
+                      <ChevronRightIcon className="w-4 h-4 transition-transform group-open:rotate-90" />
+                      Advanced options (time slots, limits, buffer time)
+                    </summary>
+                    <div className="mt-4 pl-6 space-y-4 border-l-2 border-gray-100">
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">Collective Schedule</div>
-                          <div className="text-sm text-gray-500">Weekdays, 9am - 5 pm EST</div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Time slot duration</label>
+                          <Select.Root value={timeSlots} onValueChange={setTimeSlots}>
+                            <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm">
+                              <Select.Value>
+                                {timeSlots === '30-mins' ? '30 minutes' :
+                                 timeSlots === '45-mins' ? '45 minutes' :
+                                 timeSlots === '60-mins' ? '60 minutes' : '30 minutes'}
+                              </Select.Value>
+                              <ChevronDownIcon className="w-4 h-4" />
+                            </Select.Trigger>
+                            <Select.Portal>
+                              <Select.Content className="overflow-hidden bg-white rounded-md shadow-lg">
+                                <Select.Viewport className="p-1">
+                                  <Select.Item value="30-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>30 minutes</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="45-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>45 minutes</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="60-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>60 minutes</Select.ItemText>
+                                  </Select.Item>
+                                </Select.Viewport>
+                              </Select.Content>
+                            </Select.Portal>
+                          </Select.Root>
                         </div>
-                        <button className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-[#b60074] hover:bg-gray-50 rounded transition-colors">
-                          <Pencil1Icon className="w-4 h-4" />
-                          Edit Schedule
-                        </button>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Buffer time</label>
+                          <Select.Root value="15-mins">
+                            <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm">
+                              <Select.Value>15 minutes</Select.Value>
+                              <ChevronDownIcon className="w-4 h-4" />
+                            </Select.Trigger>
+                            <Select.Portal>
+                              <Select.Content className="overflow-hidden bg-white rounded-md shadow-lg">
+                                <Select.Viewport className="p-1">
+                                  <Select.Item value="0-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>No buffer</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="15-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>15 minutes</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="30-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>30 minutes</Select.ItemText>
+                                  </Select.Item>
+                                </Select.Viewport>
+                              </Select.Content>
+                            </Select.Portal>
+                          </Select.Root>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
-                      <strong>Collective mode:</strong> All hosts will follow this same schedule. Interviews will only be scheduled when ALL selected hosts are available at the same time.
+                  </details>
+
+                  {/* Simple capacity display */}
+                  <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Total avg host capacity</span>
+                      <span className="font-medium text-gray-900">16 hours/week</span>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             </Accordion.Content>
           </Accordion.Item>
