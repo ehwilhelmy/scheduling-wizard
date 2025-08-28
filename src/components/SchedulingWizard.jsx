@@ -4,7 +4,7 @@ import * as Select from '@radix-ui/react-select';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AddTeammateDropdown from './AddTeammateDropdown';
 import CalendarView from './CalendarView';
-import AISchedulingAssistant from './AISchedulingAssistant';
+import AIStudySetupAssistant from './AIStudySetupAssistant';
 import { 
   ChevronDownIcon, 
   CheckIcon, 
@@ -54,6 +54,22 @@ const SchedulingWizard = () => {
       newExpanded.add(hostId);
     }
     setExpandedHosts(newExpanded);
+  };
+
+  const handleStudyConfigured = (config) => {
+    // Update the hosts based on AI configuration
+    setHosts(config.hosts.map((host, index) => ({
+      id: index + 1,
+      name: host.name,
+      role: 'Host',
+      priority: host.role === 'Primary' ? 'high' : 'medium'
+    })));
+    
+    // Update other settings
+    setTimeSlots(`${config.sessionLength}-mins`);
+    setBufferTime(`${config.bufferTime}-mins-after`);
+    
+    console.log('Study configured:', config);
   };
 
   const handleAddGuest = (user) => {
@@ -230,7 +246,7 @@ const SchedulingWizard = () => {
                   <path d="M18.259 8.715L18 9.75l-.259-1.035a1.5 1.5 0 00-1.006-1.006L15.75 7.5l1.035-.259a1.5 1.5 0 001.006-1.006L18 5.25l.259 1.035a1.5 1.5 0 001.006 1.006L20.25 7.5l-1.035.259a1.5 1.5 0 00-1.006 1.006z" />
                   <path d="M16.894 17.801L16.5 19l-.394-1.199a1.5 1.5 0 00-1.107-1.107L13.75 16.5l1.249-.394a1.5 1.5 0 001.107-1.107L16.5 14l.394 1.199a1.5 1.5 0 001.107 1.107l1.249.394l-1.249.394a1.5 1.5 0 00-1.107 1.107z" />
                 </svg>
-                Find Smart Time with AI
+                AI Setup Research Study
               </button>
             </div>
 
@@ -770,11 +786,68 @@ const SchedulingWizard = () => {
                     </div>
                   </details>
 
-                  {/* Simple capacity display */}
-                  <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Total avg host capacity</span>
-                      <span className="font-medium text-gray-900">16 hours/week</span>
+                  {/* Enhanced capacity display */}
+                  <div className="mt-6 space-y-4">
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between text-sm mb-3">
+                        <span className="text-gray-700 font-medium">Weekly Capacity Overview</span>
+                        <span className="font-semibold text-gray-900">~40 interview hours/week</span>
+                      </div>
+                      
+                      {/* Sample weekly schedule */}
+                      <div className="bg-white rounded-lg p-3 border">
+                        <div className="text-xs font-medium text-gray-600 mb-2">Recommended Schedule</div>
+                        
+                        {/* Header */}
+                        <div className="grid grid-cols-6 gap-1 mb-1 text-xs text-gray-500">
+                          <div></div>
+                          <div className="text-center">Mon</div>
+                          <div className="text-center">Tue</div>
+                          <div className="text-center">Wed</div>
+                          <div className="text-center">Thu</div>
+                          <div className="text-center">Fri</div>
+                        </div>
+                        
+                        {/* Host rows */}
+                        {hosts.map((host, hostIndex) => (
+                          <div key={host.id} className="grid grid-cols-6 gap-1 mb-1">
+                            <div className="flex items-center gap-1 text-xs">
+                              <div className={`w-3 h-3 rounded-full ${hostIndex === 0 ? 'bg-orange-500' : 'bg-blue-500'} text-white flex items-center justify-center text-xs`}>
+                                {host.name.split(' ').map(n => n[0]).join('').charAt(0)}
+                              </div>
+                              <span className="text-gray-600 truncate">{host.name.split(' ')[0]}</span>
+                            </div>
+                            {[6, 8, 8, 8, 6].map((baseSlots, dayIndex) => {
+                              const slots = Math.floor(baseSlots * (hostIndex === 0 ? 0.6 : 0.4));
+                              return (
+                                <div key={dayIndex} className="text-center">
+                                  <div className={`${hostIndex === 0 ? 'bg-orange-100 border-orange-200 text-orange-700' : 'bg-blue-100 border-blue-200 text-blue-700'} border rounded px-1 py-1 text-xs`}>
+                                    <div className="font-semibold">{slots}</div>
+                                    <div className="text-xs opacity-75">interviews</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                        
+                        {/* Total row */}
+                        <div className="grid grid-cols-6 gap-1 pt-1 border-t border-gray-200 mt-2">
+                          <div className="text-xs font-medium text-gray-600">Total</div>
+                          {[6, 8, 8, 8, 6].map((total, dayIndex) => (
+                            <div key={dayIndex} className="text-center">
+                              <div className="bg-gray-100 border border-gray-200 text-gray-700 rounded px-1 py-1 text-xs">
+                                <div className="font-semibold">{total}</div>
+                                <div className="text-xs opacity-75">per day</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="mt-3 pt-2 border-t border-gray-200 text-xs text-gray-500">
+                          💡 Based on {timeSlots === '30-mins' ? '30' : timeSlots === '45-mins' ? '45' : '60'} min sessions + 15 min buffer
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -806,11 +879,11 @@ const SchedulingWizard = () => {
         <CalendarView onClose={() => setShowCalendarView(false)} />
       )}
       
-      {/* AI Scheduling Assistant Modal */}
-      <AISchedulingAssistant
+      {/* AI Study Setup Assistant Modal */}
+      <AIStudySetupAssistant
         isOpen={showAIAssistant}
         onClose={() => setShowAIAssistant(false)}
-        eventTitle={eventTitle}
+        onStudyConfigured={handleStudyConfigured}
       />
     </div>
   );
