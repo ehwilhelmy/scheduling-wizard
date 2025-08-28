@@ -4,6 +4,7 @@ import * as Select from '@radix-ui/react-select';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AddTeammateDropdown from './AddTeammateDropdown';
 import CalendarView from './CalendarView';
+import EditAvailabilityModal from './EditAvailabilityModal';
 import { 
   ChevronDownIcon, 
   CheckIcon, 
@@ -40,6 +41,8 @@ const SchedulingWizard = () => {
   const [guests, setGuests] = useState([]);
   const [observers, setObservers] = useState([]);
   const [expandedHosts, setExpandedHosts] = useState(new Set());
+  const [editingHost, setEditingHost] = useState(null);
+  const [showEditAvailability, setShowEditAvailability] = useState(false);
 
   const handleAddHost = (user) => {
     setHosts([...hosts, { ...user, priority: 'high' }]);
@@ -53,6 +56,32 @@ const SchedulingWizard = () => {
       newExpanded.add(hostId);
     }
     setExpandedHosts(newExpanded);
+  };
+
+  const handleEditAvailability = (host) => {
+    setEditingHost(host);
+    setShowEditAvailability(true);
+  };
+
+  const handleSaveAvailability = (availabilityData) => {
+    // Here you could update the host's availability data
+    console.log('Saving availability for', editingHost.name, availabilityData);
+  };
+
+  const calculateHostCapacity = () => {
+    // Calculate based on time slots, buffer time, and working hours
+    const slotDuration = timeSlots === '30-mins' ? 0.5 : timeSlots === '45-mins' ? 0.75 : 1;
+    const bufferMinutes = bufferTime.includes('15-mins') ? 15 : bufferTime.includes('30-mins') ? 30 : 0;
+    const isBufferBoth = bufferTime.includes('both');
+    const totalBufferPerSlot = isBufferBoth ? bufferMinutes * 2 : bufferMinutes;
+    
+    // Assume 8 hours/day, 5 days/week of availability
+    const workingHoursPerWeek = 40;
+    const effectiveSlotDuration = slotDuration + (totalBufferPerSlot / 60);
+    const slotsPerWeek = Math.floor(workingHoursPerWeek / effectiveSlotDuration);
+    const totalHoursPerWeek = slotsPerWeek * slotDuration;
+    
+    return Math.round(totalHoursPerWeek * hosts.length);
   };
 
   const handleAddGuest = (user) => {
@@ -78,7 +107,7 @@ const SchedulingWizard = () => {
   const [scheduleMode, setScheduleMode] = useState('by-host');
   const [interviewLimit, setInterviewLimit] = useState('none');
   const [customInterviewLimit, setCustomInterviewLimit] = useState('');
-  const [bufferTime, setBufferTime] = useState('none');
+  const [bufferTime, setBufferTime] = useState('15-mins-after');
   const [customBufferTime, setCustomBufferTime] = useState('');
   
   // Calendar view state
@@ -679,7 +708,10 @@ const SchedulingWizard = () => {
                             </button>
                           </div>
                           
-                            <button className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-gray-50 transition-colors">
+                            <button 
+                              onClick={() => handleEditAvailability(host)}
+                              className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#b60074] border border-[#af006f2d] rounded hover:bg-gray-50 transition-colors"
+                            >
                               Edit availability
                             </button>
                           </div>
@@ -727,22 +759,42 @@ const SchedulingWizard = () => {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Buffer time</label>
-                          <Select.Root value="15-mins">
+                          <Select.Root value={bufferTime} onValueChange={setBufferTime}>
                             <Select.Trigger className="inline-flex items-center justify-between w-full bg-white border border-gray-200 rounded px-3 py-2 text-sm">
-                              <Select.Value>15 minutes</Select.Value>
+                              <Select.Value>
+                                {bufferTime === 'none' ? 'No buffer' :
+                                 bufferTime === '15-mins-before' ? '15 min before' :
+                                 bufferTime === '15-mins-after' ? '15 min after' :
+                                 bufferTime === '15-mins-both' ? '15 min before & after' :
+                                 bufferTime === '30-mins-before' ? '30 min before' :
+                                 bufferTime === '30-mins-after' ? '30 min after' :
+                                 bufferTime === '30-mins-both' ? '30 min before & after' : '15 min after'}
+                              </Select.Value>
                               <ChevronDownIcon className="w-4 h-4" />
                             </Select.Trigger>
                             <Select.Portal>
                               <Select.Content className="overflow-hidden bg-white rounded-md shadow-lg">
                                 <Select.Viewport className="p-1">
-                                  <Select.Item value="0-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                  <Select.Item value="none" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
                                     <Select.ItemText>No buffer</Select.ItemText>
                                   </Select.Item>
-                                  <Select.Item value="15-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
-                                    <Select.ItemText>15 minutes</Select.ItemText>
+                                  <Select.Item value="15-mins-before" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>15 minutes before</Select.ItemText>
                                   </Select.Item>
-                                  <Select.Item value="30-mins" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
-                                    <Select.ItemText>30 minutes</Select.ItemText>
+                                  <Select.Item value="15-mins-after" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>15 minutes after</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="15-mins-both" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>15 minutes before & after</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="30-mins-before" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>30 minutes before</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="30-mins-after" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>30 minutes after</Select.ItemText>
+                                  </Select.Item>
+                                  <Select.Item value="30-mins-both" className="select-none rounded px-6 py-2 text-sm hover:bg-gray-50 cursor-pointer">
+                                    <Select.ItemText>30 minutes before & after</Select.ItemText>
                                   </Select.Item>
                                 </Select.Viewport>
                               </Select.Content>
@@ -757,7 +809,7 @@ const SchedulingWizard = () => {
                   <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Total avg host capacity</span>
-                      <span className="font-medium text-gray-900">16 hours/week</span>
+                      <span className="font-medium text-gray-900">{calculateHostCapacity()} hours/week</span>
                     </div>
                   </div>
                 </div>
@@ -788,6 +840,14 @@ const SchedulingWizard = () => {
       {showCalendarView && (
         <CalendarView onClose={() => setShowCalendarView(false)} />
       )}
+
+      {/* Edit Availability Modal */}
+      <EditAvailabilityModal
+        isOpen={showEditAvailability}
+        onClose={() => setShowEditAvailability(false)}
+        host={editingHost}
+        onSave={handleSaveAvailability}
+      />
     </div>
   );
 };
