@@ -4,6 +4,7 @@ import * as Select from '@radix-ui/react-select';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AddTeammateDropdown from './AddTeammateDropdown';
 import CalendarView from './CalendarView';
+import AISchedulingAssistant from './AISchedulingAssistant';
 import { 
   ChevronDownIcon, 
   CheckIcon, 
@@ -83,6 +84,7 @@ const SchedulingWizard = () => {
   
   // Calendar view state
   const [showCalendarView, setShowCalendarView] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
   const steps = [
     { name: 'Plan', completed: true },
@@ -215,6 +217,21 @@ const SchedulingWizard = () => {
                   </button>
                 </>
               )}
+            </div>
+            
+            {/* AI Assistant Button */}
+            <div className="mt-4 mb-4">
+              <button 
+                onClick={() => setShowAIAssistant(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-md"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  <path d="M18.259 8.715L18 9.75l-.259-1.035a1.5 1.5 0 00-1.006-1.006L15.75 7.5l1.035-.259a1.5 1.5 0 001.006-1.006L18 5.25l.259 1.035a1.5 1.5 0 001.006 1.006L20.25 7.5l-1.035.259a1.5 1.5 0 00-1.006 1.006z" />
+                  <path d="M16.894 17.801L16.5 19l-.394-1.199a1.5 1.5 0 00-1.107-1.107L13.75 16.5l1.249-.394a1.5 1.5 0 001.107-1.107L16.5 14l.394 1.199a1.5 1.5 0 001.107 1.107l1.249.394l-1.249.394a1.5 1.5 0 00-1.107 1.107z" />
+                </svg>
+                Find Smart Time with AI
+              </button>
             </div>
 
             {/* Event Options */}
@@ -788,6 +805,13 @@ const SchedulingWizard = () => {
       {showCalendarView && (
         <CalendarView onClose={() => setShowCalendarView(false)} />
       )}
+      
+      {/* AI Scheduling Assistant Modal */}
+      <AISchedulingAssistant
+        isOpen={showAIAssistant}
+        onClose={() => setShowAIAssistant(false)}
+        eventTitle={eventTitle}
+      />
     </div>
   );
 };
