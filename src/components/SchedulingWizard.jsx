@@ -5,6 +5,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import AddTeammateDropdown from './AddTeammateDropdown';
 import CalendarView from './CalendarView';
 import AIStudySetupAssistant from './AIStudySetupAssistant';
+import HybridAvailabilityPreview from './HybridAvailabilityPreview';
 import { 
   ChevronDownIcon, 
   CheckIcon, 
@@ -70,6 +71,39 @@ const SchedulingWizard = () => {
     setBufferTime(`${config.bufferTime}-mins-after`);
     
     console.log('Study configured:', config);
+  };
+
+  const handleEventTypeChange = (newEventType) => {
+    setEventType(newEventType);
+    
+    // Adjust hosts based on event type
+    if (newEventType === '1:1' || newEventType === 'one-on-one') {
+      // For 1:1, keep only one host (the primary/first one)
+      if (hosts.length > 1) {
+        setHosts([hosts[0]]); // Keep only the first host
+      } else if (hosts.length === 0) {
+        // If no hosts, add a default one
+        setHosts([{ id: 1, name: 'Dave Chen', role: 'Host', priority: 'high' }]);
+      }
+    } else if (newEventType === 'round-robin') {
+      // For round robin, ensure we have at least 2 hosts
+      if (hosts.length < 2) {
+        const existingHost = hosts[0] || { id: 1, name: 'Dave Chen', role: 'Host', priority: 'high' };
+        setHosts([
+          existingHost,
+          { id: 2, name: 'Oren Friedman', role: 'Host', priority: 'high' }
+        ]);
+      }
+    } else if (newEventType === 'collective') {
+      // For collective, can have multiple hosts but different logic
+      if (hosts.length < 2) {
+        const existingHost = hosts[0] || { id: 1, name: 'Dave Chen', role: 'Host', priority: 'high' };
+        setHosts([
+          existingHost,
+          { id: 2, name: 'Oren Friedman', role: 'Host', priority: 'high' }
+        ]);
+      }
+    }
   };
 
   const handleAddGuest = (user) => {
@@ -305,7 +339,7 @@ const SchedulingWizard = () => {
                 </Select.Portal>
               </Select.Root>
 
-              <Select.Root value={eventType} onValueChange={setEventType}>
+              <Select.Root value={eventType} onValueChange={handleEventTypeChange}>
                 <Select.Trigger className="inline-flex items-center gap-2 px-3 py-1.5 text-sm text-[#b60074] hover:bg-gray-50 rounded transition-colors">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M5.5 7C6.32843 7 7 6.32843 7 5.5C7 4.67157 6.32843 4 5.5 4C4.67157 4 4 4.67157 4 5.5C4 6.32843 4.67157 7 5.5 7Z" stroke="currentColor" strokeWidth="1.5"/>
@@ -786,69 +820,9 @@ const SchedulingWizard = () => {
                     </div>
                   </details>
 
-                  {/* Enhanced capacity display */}
-                  <div className="mt-6 space-y-4">
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center justify-between text-sm mb-3">
-                        <span className="text-gray-700 font-medium">Weekly Capacity Overview</span>
-                        <span className="font-semibold text-gray-900">~40 interview hours/week</span>
-                      </div>
-                      
-                      {/* Sample weekly schedule */}
-                      <div className="bg-white rounded-lg p-3 border">
-                        <div className="text-xs font-medium text-gray-600 mb-2">Recommended Schedule</div>
-                        
-                        {/* Header */}
-                        <div className="grid grid-cols-6 gap-1 mb-1 text-xs text-gray-500">
-                          <div></div>
-                          <div className="text-center">Mon</div>
-                          <div className="text-center">Tue</div>
-                          <div className="text-center">Wed</div>
-                          <div className="text-center">Thu</div>
-                          <div className="text-center">Fri</div>
-                        </div>
-                        
-                        {/* Host rows */}
-                        {hosts.map((host, hostIndex) => (
-                          <div key={host.id} className="grid grid-cols-6 gap-1 mb-1">
-                            <div className="flex items-center gap-1 text-xs">
-                              <div className={`w-3 h-3 rounded-full ${hostIndex === 0 ? 'bg-orange-500' : 'bg-blue-500'} text-white flex items-center justify-center text-xs`}>
-                                {host.name.split(' ').map(n => n[0]).join('').charAt(0)}
-                              </div>
-                              <span className="text-gray-600 truncate">{host.name.split(' ')[0]}</span>
-                            </div>
-                            {[6, 8, 8, 8, 6].map((baseSlots, dayIndex) => {
-                              const slots = Math.floor(baseSlots * (hostIndex === 0 ? 0.6 : 0.4));
-                              return (
-                                <div key={dayIndex} className="text-center">
-                                  <div className={`${hostIndex === 0 ? 'bg-orange-100 border-orange-200 text-orange-700' : 'bg-blue-100 border-blue-200 text-blue-700'} border rounded px-1 py-1 text-xs`}>
-                                    <div className="font-semibold">{slots}</div>
-                                    <div className="text-xs opacity-75">interviews</div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                        
-                        {/* Total row */}
-                        <div className="grid grid-cols-6 gap-1 pt-1 border-t border-gray-200 mt-2">
-                          <div className="text-xs font-medium text-gray-600">Total</div>
-                          {[6, 8, 8, 8, 6].map((total, dayIndex) => (
-                            <div key={dayIndex} className="text-center">
-                              <div className="bg-gray-100 border border-gray-200 text-gray-700 rounded px-1 py-1 text-xs">
-                                <div className="font-semibold">{total}</div>
-                                <div className="text-xs opacity-75">per day</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <div className="mt-3 pt-2 border-t border-gray-200 text-xs text-gray-500">
-                          💡 Based on {timeSlots === '30-mins' ? '30' : timeSlots === '45-mins' ? '45' : '60'} min sessions + 15 min buffer
-                        </div>
-                      </div>
-                    </div>
+                  {/* Interactive Availability Preview */}
+                  <div className="mt-6">
+                    <HybridAvailabilityPreview />
                   </div>
                 </div>
               </div>
